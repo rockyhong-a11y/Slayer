@@ -36,4 +36,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 	Run.room += 1
-	get_tree().change_scene_to_file("res://scenes/dungeon.tscn")
+	if Run.is_cleared():
+		get_tree().change_scene_to_file("res://scenes/victory.tscn")
+	else:
+		get_tree().change_scene_to_file("res://scenes/dungeon.tscn")

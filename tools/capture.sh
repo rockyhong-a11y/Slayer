@@ -3,7 +3,7 @@
 #
 #   tools/capture.sh [screen] [output.png]
 #
-#   screen   value for GAME_START (title|dungeon|combat|reward). Default: title
+#   screen   value for GAME_START (title|dungeon|combat|reward|victory). Default: title
 #   output   PNG path. Default: qa_shots/<screen>.png
 #
 # Env:

@@ -55,7 +55,7 @@ tools/capture.sh combat qa_shots/c.png      # 출력 경로 지정
 
 | 환경변수 | 의미 |
 |---|---|
-| `GAME_START` | 시작 화면 (`title`/`dungeon`/`combat`/`reward`) |
+| `GAME_START` | 시작 화면 (`title`/`dungeon`/`combat`/`reward`/`victory`) |
 | `QA_SHOT` | 저장할 PNG 경로. 비어 있으면 평범하게 플레이만 한다 |
 | `QA_FRAME` | 캡처 전 대기 프레임 수 (기본 90). 화면이 덜 그려져 찍히면 올린다 |
 | `QA_QUIT` | `0`이면 캡처 후 창을 닫지 않는다 |
