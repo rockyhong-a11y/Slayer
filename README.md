@@ -93,13 +93,35 @@ echo "이유" > loop/STOP           # 이유를 남기며 정지
 | 환경변수 | 기본값 | 의미 |
 |---|---|---|
 | `CLAUDE_BIN` | `claude` | Claude Code 실행 파일 |
-| `CLAUDE_ARGS` | `--permission-mode acceptEdits` | claude에 넘길 플래그 |
+| `CLAUDE_ARGS` | (아래 참조) | 기본 플래그를 통째로 교체한다 |
 | `LOOP_SLEEP` | `5` | 이터레이션 사이 대기(초) |
 | `LOOP_MAX` | `0` | N회 후 정지 (0 = 무제한) |
 
-> `acceptEdits`는 파일 편집만 자동 승인한다. 루프가 셸 명령(캡처 실행 등)에서 막히면
-> 완전 무인 실행을 위해 `CLAUDE_ARGS=--dangerously-skip-permissions`가 필요하다.
-> 신뢰하는 저장소에서만 쓸 것 — 기본값으로 두지 않은 이유다.
+기본 권한은 **파일 편집 + 이 프로젝트의 도구 두 개 + git 커밋**까지다.
+`--dangerously-skip-permissions`는 쓰지 않는다. 허용 목록은 이게 전부다:
+
+```
+tools/capture.sh   tools/sim.sh
+git status/diff/log/add/commit   ls   cat
+```
+
+> **왜 `.claude/settings.json`이 아니라 커맨드라인인가**
+> 프로젝트 권한 규칙은 **워크스페이스를 신뢰(trust)하기 전까지 무시된다.** 신뢰는 대화형
+> 세션에서 한 번 수락해야 하는데, 헤드리스 루프는 그걸 할 수 없다. 그래서 `loop.sh`가
+> 같은 목록을 `--allowedTools`로 직접 넘긴다.
+> `.claude/settings.json`에도 같은 목록이 들어 있어, 이 디렉터리에서 대화형으로 한 번
+> 실행해 신뢰를 수락하면 그때부터는 그쪽이 적용된다.
+
+### 루프가 "requires approval"로 막힐 때
+
+DoD는 정의상 실행을 요구한다 — B1~B5는 시뮬레이터를, Q1~Q3는 Godot 창을 돌려야 잰다.
+`acceptEdits`만으로는 둘 다 못 해서, 루프가 영원히 "미검증"만 쌓는다.
+
+범위를 좁혀 푸는 쪽을 권한다. `.claude/settings.json`에 `capture.sh`/`sim.sh`/`git`만
+허용하는 allowlist가 들어 있다. **이 파일은 커밋돼 있어야 적용된다** — 만들어만 두면 무시된다.
+커밋되고 나면 `--dangerously-skip-permissions` 없이 `acceptEdits`로도 루프가 돈다.
+
+`.claude/settings.local.json`은 머신 고유값(`GODOT_BIN` 경로)이라 커밋하지 않는다.
 
 ## 사용자가 끼어드는 법
 

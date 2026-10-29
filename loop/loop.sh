@@ -10,9 +10,14 @@
 #
 # Env:
 #   CLAUDE_BIN    claude executable (default: claude)
-#   CLAUDE_ARGS   extra flags for claude (default: --permission-mode acceptEdits)
+#   CLAUDE_ARGS   replaces the default flags entirely (split on whitespace)
 #   LOOP_SLEEP    seconds between iterations (default: 5)
 #   LOOP_MAX      stop after N iterations (default: 0 = unlimited)
+#
+# By default an iteration may edit files, run this project's two tools, and
+# commit. The allowlist is passed on the command line rather than left to
+# .claude/settings.json because project permission rules are ignored until the
+# workspace has been trusted interactively, which a headless loop cannot do.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -21,7 +26,6 @@ PROMPT_FILE="$ROOT/loop/PROMPT.md"
 LOG_DIR="$ROOT/loop/logs"
 
 CLAUDE_BIN="${CLAUDE_BIN:-claude}"
-CLAUDE_ARGS="${CLAUDE_ARGS:---permission-mode acceptEdits}"
 LOOP_SLEEP="${LOOP_SLEEP:-5}"
 LOOP_MAX="${LOOP_MAX:-0}"
 
@@ -32,6 +36,25 @@ fi
 if [[ ! -f "$PROMPT_FILE" ]]; then
 	echo "loop: missing $PROMPT_FILE" >&2
 	exit 1
+fi
+
+# An array, not a string: the rules contain * and would otherwise be glob-expanded.
+if [[ -n "${CLAUDE_ARGS:-}" ]]; then
+	read -r -a claude_args <<< "$CLAUDE_ARGS"
+else
+	claude_args=(
+		--permission-mode acceptEdits
+		--allowedTools
+		"Bash(tools/capture.sh:*)"
+		"Bash(tools/sim.sh:*)"
+		"Bash(git status:*)"
+		"Bash(git diff:*)"
+		"Bash(git log:*)"
+		"Bash(git add:*)"
+		"Bash(git commit:*)"
+		"Bash(ls:*)"
+		"Bash(cat:*)"
+	)
 fi
 
 mkdir -p "$LOG_DIR"
@@ -60,8 +83,7 @@ while true; do
 	echo "=== iteration $iter  $(date -u '+%Y-%m-%dT%H:%M:%SZ')  -> $log"
 
 	cd "$ROOT"
-	# shellcheck disable=SC2086
-	"$CLAUDE_BIN" -p "$(cat "$PROMPT_FILE")" $CLAUDE_ARGS 2>&1 | tee "$log"
+	"$CLAUDE_BIN" -p "$(cat "$PROMPT_FILE")" "${claude_args[@]}" 2>&1 | tee "$log"
 	status=${PIPESTATUS[0]}
 	echo "=== iteration $iter finished (exit $status)"
 

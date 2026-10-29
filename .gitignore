@@ -10,3 +10,6 @@ qa_shots/*.png
 # Loop runtime
 loop/STOP
 loop/logs/*.log
+
+# Machine-specific: holds this machine's GODOT_BIN path
+.claude/settings.local.json
