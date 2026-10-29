@@ -13,6 +13,7 @@ loop/loop.sh            무한 반복 루프
 loop/PROMPT.md          매 이터레이션에 주입되는 프롬프트
 tools/capture.sh        시각 QA — 창 띄우고 캡처하고 닫기
 tools/qa_capture.gd     캡처 오토로드 (환경변수 구동)
+tools/balance_sim.gd    밸런스 시뮬레이터 — 창 없이 돌려 B1~B5 표 출력
 scripts/ scenes/        게임
 qa_shots/               캡처 결과 PNG (git 제외)
 ```
@@ -58,6 +59,25 @@ tools/capture.sh combat qa_shots/c.png      # 출력 경로 지정
 | `QA_SHOT` | 저장할 PNG 경로. 비어 있으면 평범하게 플레이만 한다 |
 | `QA_FRAME` | 캡처 전 대기 프레임 수 (기본 90). 화면이 덜 그려져 찍히면 올린다 |
 | `QA_QUIT` | `0`이면 캡처 후 창을 닫지 않는다 |
+
+## 밸런스 시뮬레이션
+
+창 없이 전투·보상 규칙만 반복해서 `docs/DESIGN.md`의 B1~B5를 표로 찍는다.
+
+```bash
+"$GODOT_BIN" --headless --path . --script res://tools/balance_sim.gd
+```
+
+수치는 전부 `scripts/run_state.gd`에서 읽는다. 거기만 고치면 표가 따라 움직인다.
+
+| 환경변수 | 기본값 | 의미 |
+|---|---|---|
+| `SIM_RUNS` | `100` | 정책 하나당 시뮬 판 수 (DESIGN이 정한 표본 크기) |
+| `SIM_SEED` | `1234` | RNG 시드. 고정이라 밸런스 변경 전후를 비교할 수 있다 |
+
+B1~B4는 보상을 매번 무작위로 고르는 판으로 잰다.
+B5는 "항상 같은 보상만 고르는" 세 가지 순수 전략을 각각 `SIM_RUNS`판씩 돌려,
+그중 가장 센 전략의 클리어율이 80% 미만인지 본다.
 
 ## 루프
 

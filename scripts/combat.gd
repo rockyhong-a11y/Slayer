@@ -38,7 +38,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("ui_accept"):
 		return
 
-	var dealt := Run.atk + randi_range(-1, 1)
+	var dealt := Run.atk + randi_range(-Run.DMG_VARIANCE, Run.DMG_VARIANCE)
 	enemy_hp -= dealt
 	_log("You strike for %d." % dealt)
 
@@ -49,7 +49,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().change_scene_to_file("res://scenes/reward.tscn")
 		return
 
-	var taken := enemy_atk + randi_range(-1, 1)
+	var taken := enemy_atk + randi_range(-Run.DMG_VARIANCE, Run.DMG_VARIANCE)
 	Run.hp -= taken
 	_log("Enemy hits for %d." % taken)
 
