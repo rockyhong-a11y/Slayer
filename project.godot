@@ -1,0 +1,24 @@
+; Slayer - Godot 4.x project
+
+config_version=5
+
+[application]
+
+config/name="Slayer"
+run/main_scene="res://scenes/boot.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[autoload]
+
+Run="*res://scripts/run_state.gd"
+QaCapture="*res://tools/qa_capture.gd"
+
+[display]
+
+window/size/viewport_width=960
+window/size/viewport_height=540
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

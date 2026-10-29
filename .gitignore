@@ -1,0 +1,12 @@
+# Godot
+.godot/
+.import/
+export_presets.cfg
+*.translation
+
+# QA capture output (artifacts, not source)
+qa_shots/*.png
+
+# Loop runtime
+loop/STOP
+loop/logs/*.log
