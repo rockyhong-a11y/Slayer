@@ -13,6 +13,7 @@
 #   CLAUDE_ARGS   replaces the default flags entirely (split on whitespace)
 #   LOOP_SLEEP    seconds between iterations (default: 5)
 #   LOOP_MAX      stop after N iterations (default: 0 = unlimited)
+#   LOOP_PUSH     0 to keep commits local (default: push after each iteration)
 #
 # By default an iteration may edit files, run this project's two tools, and
 # commit. The allowlist is passed on the command line rather than left to
@@ -28,6 +29,41 @@ LOG_DIR="$ROOT/loop/logs"
 CLAUDE_BIN="${CLAUDE_BIN:-claude}"
 LOOP_SLEEP="${LOOP_SLEEP:-5}"
 LOOP_MAX="${LOOP_MAX:-0}"
+LOOP_PUSH="${LOOP_PUSH:-1}"
+
+# Pushing is the supervisor's job, not an iteration's. Doing it here means it
+# happens whether or not a session remembered to, it survives a session that
+# died mid-work, and `git push` stays out of the iterations' allowlist. The
+# container is reclaimed after a period of inactivity, so commits that only
+# exist on local disk are commits waiting to be lost.
+push_if_ahead() {
+	local branch delay=2
+	branch="$(git -C "$ROOT" symbolic-ref --short -q HEAD)" || {
+		echo "loop: detached HEAD, not pushing" >&2
+		return 0
+	}
+
+	if git -C "$ROOT" rev-parse --verify -q "origin/$branch" >/dev/null; then
+		git -C "$ROOT" fetch -q origin "$branch" 2>/dev/null || true
+		if [[ -z "$(git -C "$ROOT" log --oneline "origin/$branch..HEAD" 2>/dev/null)" ]]; then
+			return 0
+		fi
+	fi
+
+	for attempt in 1 2 3 4 5; do
+		if git -C "$ROOT" push -q -u origin "$branch" 2>&1; then
+			echo "loop: pushed $branch"
+			return 0
+		fi
+		if (( attempt == 5 )); then
+			break
+		fi
+		echo "loop: push failed, retrying in ${delay}s"
+		sleep "$delay"
+		delay=$(( delay * 2 ))
+	done
+	echo "loop: push failed after 5 attempts; commits remain local only" >&2
+}
 
 if ! command -v "$CLAUDE_BIN" >/dev/null 2>&1; then
 	echo "loop: '$CLAUDE_BIN' not found. Install Claude Code or set CLAUDE_BIN." >&2
@@ -86,6 +122,17 @@ while true; do
 	"$CLAUDE_BIN" -p "$(cat "$PROMPT_FILE")" "${claude_args[@]}" 2>&1 | tee "$log"
 	status=${PIPESTATUS[0]}
 	echo "=== iteration $iter finished (exit $status)"
+
+	# An iteration that edited files without committing leaves work only the
+	# container holds; say so rather than letting it vanish quietly.
+	if ! git -C "$ROOT" diff --quiet HEAD 2>/dev/null \
+		|| [[ -n "$(git -C "$ROOT" ls-files --others --exclude-standard)" ]]; then
+		echo "loop: WARNING uncommitted changes left in the working tree" >&2
+	fi
+
+	if [[ "$LOOP_PUSH" != "0" ]]; then
+		push_if_ahead
+	fi
 
 	# A crash is not a reason to spin: back off before trying again.
 	if (( status != 0 )); then
