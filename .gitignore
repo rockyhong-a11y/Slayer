@@ -1,8 +1,10 @@
 # Godot
 .godot/
 .import/
-export_presets.cfg
 *.translation
+
+# Web export output (35MB of engine wasm; rebuilt by tools/export_web.sh)
+build/
 
 # QA capture output (artifacts, not source)
 qa_shots/*.png

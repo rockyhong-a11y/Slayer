@@ -79,6 +79,41 @@ B1~B4는 보상을 매번 무작위로 고르는 판으로 잰다.
 B5는 "항상 같은 보상만 고르는" 세 가지 순수 전략을 각각 `SIM_RUNS`판씩 돌려,
 그중 가장 센 전략의 클리어율이 80% 미만인지 본다.
 
+## 웹 빌드 (브라우저에서 플레이)
+
+```bash
+tools/export_web.sh            # -> build/web/
+cd build/web && python3 -m http.server 8777
+# http://127.0.0.1:8777/index.html
+```
+
+`file://`로는 안 된다 — 엔진이 자기 wasm을 fetch하기 때문에 HTTP로 서빙해야 한다.
+
+빌드는 **단일 스레드 템플릿**을 쓴다. 그래야 COOP/COEP 교차 출처 격리 헤더 없이
+아무 정적 호스트에서나 돌아간다 (GitHub Pages 포함).
+
+### 익스포트 템플릿 설치
+
+엔진 바이너리와 별개로 받아야 한다. 전체 템플릿은 1GB지만 웹용 하나만 쓰면 된다.
+
+```bash
+curl -sSL -o tpl.tpz \
+  https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
+unzip -o -q tpl.tpz "templates/web_nothreads_release.zip" "templates/version.txt" -d x
+mkdir -p ~/.local/share/godot/export_templates/4.3.stable
+cp x/templates/* ~/.local/share/godot/export_templates/4.3.stable/
+```
+
+### 크기
+
+| 파일 | 크기 |
+|---|---|
+| `index.pck` (게임 그 자체) | **25 KB** |
+| `index.wasm` (Godot 엔진) | **35 MB** |
+
+게임은 가볍고 엔진이 무겁다. 이 35MB 때문에 Claude Artifact로는 못 올린다
+(바이너리당 15MB 제한). 정적 호스트가 필요하다.
+
 ## 루프
 
 ```bash
