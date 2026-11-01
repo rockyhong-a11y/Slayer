@@ -149,8 +149,11 @@ func _report(runs: int, rng_seed: int, mixed: Dictionary, pure: Dictionary) -> v
 	print("")
 	print("BALANCE SIM  --  %d runs per policy, seed %d, %d rooms per run"
 		% [runs, rng_seed, RunState.ROOMS_PER_RUN])
-	print("start HP %d  ATK %d   enemy HP 10+4n  ATK 2+n   damage +/-%d"
-		% [RunState.START_HP, RunState.START_ATK, RunState.DMG_VARIANCE])
+	print("start HP %d  ATK %d   enemy HP %d+%dn  ATK %d+n/%d   damage +/-%d"
+		% [RunState.START_HP, RunState.START_ATK,
+			RunState.ENEMY_HP_BASE, RunState.ENEMY_HP_PER_ROOM,
+			RunState.ENEMY_ATK_BASE, RunState.ENEMY_ATK_ROOMS_PER_POINT,
+			RunState.DMG_VARIANCE])
 	print("")
 	print("  #   measure                        value      band           result")
 	print("  --------------------------------------------------------------------")

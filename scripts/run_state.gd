@@ -1,7 +1,7 @@
 extends Node
 ## State of a single run. Reset whenever a run starts or the player dies.
 
-const START_HP := 30
+const START_HP := 27
 const START_ATK := 6
 
 ## Rooms to survive for a win. Reaching room ROOMS_PER_RUN + 1 clears the run.
@@ -51,10 +51,18 @@ func apply_reward(choice: int) -> void:
 		REWARD_HEAL:
 			hp = mini(max_hp, hp + REWARD_HEAL_AMOUNT)
 
+## Enemy growth per room. HP is tuned to keep a fight around three exchanges
+## at every room number, so the ramp the player actually feels is the enemy's
+## ATK -- the damage taken per fight -- rather than the fight getting longer.
+const ENEMY_HP_BASE := 12
+const ENEMY_HP_PER_ROOM := 2
+const ENEMY_ATK_BASE := 3
+const ENEMY_ATK_ROOMS_PER_POINT := 4
+
 ## Enemy stats are a pure function of room number, so balance is readable
 ## in one place instead of scattered across encounters.
 func enemy_hp() -> int:
-	return 10 + room * 4
+	return ENEMY_HP_BASE + room * ENEMY_HP_PER_ROOM
 
 func enemy_atk() -> int:
-	return 2 + room
+	return ENEMY_ATK_BASE + floori(float(room) / float(ENEMY_ATK_ROOMS_PER_POINT))
