@@ -12,6 +12,7 @@ config/features=PackedStringArray("4.3", "GL Compatibility")
 
 Run="*res://scripts/run_state.gd"
 QaCapture="*res://tools/qa_capture.gd"
+PlayThru="*res://tools/playthrough.gd"
 
 [display]
 

@@ -83,6 +83,7 @@ else
 		--allowedTools
 		"Bash(tools/capture.sh:*)"
 		"Bash(tools/sim.sh:*)"
+		"Bash(tools/play.sh:*)"
 		"Bash(git status:*)"
 		"Bash(git diff:*)"
 		"Bash(git log:*)"
