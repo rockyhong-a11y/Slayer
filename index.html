@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0b0d1a">
+  <title>Slayer</title>
+  <style>
+    :root {
+      --ink: #0b0d1a;
+      --panel: rgba(11, 13, 26, 0.72);
+      --text: #f4f6ff;
+      --dim: #9aa3c7;
+      --gold: #ffd23f;
+      --red: #ff3b4e;
+      --cyan: #3fd0ff;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%; overflow: hidden;
+      background: var(--ink); color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+    #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+    /* The in-arena HUD is the level itself, so this overlay stays small. */
+    #hud {
+      position: fixed; inset: 0; pointer-events: none;
+      padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
+               max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      font-weight: 800; font-style: italic; letter-spacing: 0.04em;
+    }
+    #hud[hidden] { display: none; }
+    .row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+    #hp { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    #hp .track {
+      width: clamp(96px, 22vw, 190px); height: 12px; border-radius: 3px;
+      background: rgba(255, 255, 255, 0.14); outline: 2px solid rgba(0, 0, 0, 0.5); overflow: hidden;
+    }
+    #hp .fill { height: 100%; width: 100%; background: var(--gold); transition: width 0.12s linear; }
+    #hp.low .fill { background: var(--red); }
+
+    #round { text-align: center; font-size: 13px; color: var(--dim); }
+    #round b { display: block; font-size: 17px; color: var(--text); }
+
+    #mode {
+      pointer-events: auto; display: flex; border: 0; padding: 0; border-radius: 8px; overflow: hidden;
+      background: var(--panel); outline: 2px solid rgba(255, 255, 255, 0.22);
+      font: inherit; color: var(--dim); cursor: pointer; touch-action: manipulation;
+    }
+    #mode span { padding: 11px 15px; font-size: 16px; min-width: 50px; }
+    #mode span.on { background: var(--gold); color: var(--ink); }
+
+    #superHint {
+      position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom));
+      transform: translateX(-50%); padding: 6px 14px; border-radius: 6px; white-space: nowrap;
+      background: var(--panel); color: var(--cyan); font-size: 13px;
+      animation: blink 0.7s steps(2, jump-none) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0.35; } }
+
+    #banner {
+      position: absolute; left: 0; right: 0; top: 34%; text-align: center;
+      font-size: clamp(30px, 9vw, 76px); line-height: 1; color: var(--gold);
+      text-shadow: 0 4px 0 rgba(0, 0, 0, 0.55), 0 0 26px rgba(255, 210, 63, 0.5);
+    }
+    #banner.red { color: var(--red); text-shadow: 0 4px 0 rgba(0, 0, 0, 0.55), 0 0 26px rgba(255, 59, 78, 0.5); }
+    #banner.cyan { color: var(--cyan); text-shadow: 0 4px 0 rgba(0, 0, 0, 0.55), 0 0 26px rgba(63, 208, 255, 0.5); }
+
+    #crosshair {
+      position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px;
+      border: 2px solid rgba(255, 255, 255, 0.85); border-radius: 50%;
+    }
+    #crosshair::after {
+      content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px;
+      border-radius: 50%; background: var(--red);
+    }
+
+    .stick {
+      position: fixed; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.06); pointer-events: none;
+    }
+    .stick i {
+      position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px;
+      border-radius: 50%; background: rgba(255, 255, 255, 0.5);
+    }
+    .stick.look i { background: rgba(255, 59, 78, 0.75); }
+
+    .overlay {
+      position: fixed; inset: 0; display: grid; place-items: center; text-align: center;
+      padding: 20px; background: rgba(11, 13, 26, 0.8); cursor: pointer;
+      font-weight: 800; font-style: italic;
+    }
+    .overlay[hidden], [hidden] { display: none !important; }
+    .overlay h1 {
+      margin: 0; font-size: clamp(44px, 14vw, 120px); line-height: 0.95; letter-spacing: 0.02em;
+      color: var(--gold); text-shadow: 0 6px 0 rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 210, 63, 0.45);
+    }
+    .overlay h1.red { color: var(--red); text-shadow: 0 6px 0 rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 59, 78, 0.45); }
+    .overlay .sub { margin: 8px 0 0; font-size: clamp(12px, 2.6vw, 18px); color: var(--dim); letter-spacing: 0.22em; }
+    .overlay ul {
+      list-style: none; margin: 18px auto 0; padding: 0; max-width: 560px;
+      font-style: normal; font-weight: 600; font-size: clamp(12px, 2.4vw, 15px); line-height: 1.75; color: var(--text);
+    }
+    .overlay ul b { color: var(--gold); }
+    .overlay .go {
+      margin: 18px 0 0; font-size: clamp(15px, 3.4vw, 22px); color: var(--cyan);
+      animation: blink 0.9s steps(2, jump-none) infinite;
+    }
+
+    /* The arena is as wide as the HUD it is made of: ask for landscape on phones. */
+    #rotate { display: none; }
+    @media (orientation: portrait) and (pointer: coarse) {
+      #rotate {
+        position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; text-align: center;
+        padding: 24px; background: var(--ink); font-weight: 800; font-style: italic; font-size: 20px; color: var(--gold);
+      }
+      #rotate small { display: block; margin-top: 8px; font-size: 13px; color: var(--dim); font-style: normal; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud" hidden>
+    <div class="row">
+      <div id="hp"><span>P1</span><div class="track"><div class="fill"></div></div></div>
+      <div id="round"><b>ROUND 1</b><span>0 LEFT</span></div>
+      <button id="mode" type="button" aria-label="Switch between 2D and 3D view">
+        <span data-mode="2d" class="on">2D</span><span data-mode="3d">3D</span>
+      </button>
+    </div>
+    <div id="banner" hidden></div>
+    <div id="crosshair" hidden></div>
+    <div id="superHint" hidden>SUPER READY &mdash; STEP ON A PAD</div>
+  </div>
+
+  <div id="stickMove" class="stick move" hidden><i></i></div>
+  <div id="stickLook" class="stick look" hidden><i></i></div>
+
+  <div id="title" class="overlay">
+    <div>
+      <h1>SLAYER</h1>
+      <p class="sub">THE HUD IS THE ARENA</p>
+      <ul>
+        <li><b>LEFT THUMB</b> move &nbsp;&middot;&nbsp; <b>RIGHT THUMB</b> aim and fire</li>
+        <li><b>2D</b> sees everything, hits soft &nbsp;&middot;&nbsp; <b>3D</b> sees ahead, hits double</li>
+        <li>Hide behind the <b>HP bars</b> &nbsp;&middot;&nbsp; lure them to the <b>timer</b> &nbsp;&middot;&nbsp; fill the <b>super</b></li>
+      </ul>
+      <p class="go">TAP TO START</p>
+    </div>
+  </div>
+
+  <div id="end" class="overlay" hidden>
+    <div>
+      <h1 id="endTitle">K.O.</h1>
+      <p class="sub" id="endSub"></p>
+      <p class="go">TAP TO PLAY AGAIN</p>
+    </div>
+  </div>
+
+  <div id="rotate">ROTATE YOUR PHONE<small>The arena is a widescreen HUD.</small></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
