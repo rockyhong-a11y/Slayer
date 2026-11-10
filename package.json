@@ -10,7 +10,8 @@
     "test": "node --test test/*.test.js",
     "shots": "node tools/shots.mjs",
     "smoke": "node tools/smoke.mjs",
-    "balance": "node tools/balance.mjs"
+    "balance": "node tools/balance.mjs",
+    "package:artifact": "node tools/package_artifact.mjs"
   },
   "dependencies": {
     "three": "^0.187.0"

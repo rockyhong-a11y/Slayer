@@ -114,15 +114,16 @@
       animation: blink 0.9s steps(2, jump-none) infinite;
     }
 
-    /* The arena is as wide as the HUD it is made of: ask for landscape on phones. */
-    #rotate { display: none; }
-    @media (orientation: portrait) and (pointer: coarse) {
-      #rotate {
-        position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; text-align: center;
-        padding: 24px; background: var(--ink); font-weight: 800; font-style: italic; font-size: 20px; color: var(--gold);
-      }
-      #rotate small { display: block; margin-top: 8px; font-size: 13px; color: var(--dim); font-style: normal; }
+    .overlay .go.red { color: var(--red); animation: none; }
+    .overlay .detail {
+      margin: 10px auto 0; max-width: 560px; font-style: normal; font-weight: 600;
+      font-size: 12px; line-height: 1.5; color: var(--dim); overflow-wrap: anywhere;
     }
+
+    /* The arena is a widescreen HUD, so sideways shows more of it -- but that is
+       a tip, never a gate: some phones and apps will not rotate. */
+    .portraitTip { display: none; }
+    @media (orientation: portrait) { .portraitTip { display: list-item; color: var(--cyan); } }
   </style>
 </head>
 <body>
@@ -152,8 +153,10 @@
         <li><b>LEFT THUMB</b> move &nbsp;&middot;&nbsp; <b>RIGHT THUMB</b> aim and fire</li>
         <li><b>2D</b> sees everything, hits soft &nbsp;&middot;&nbsp; <b>3D</b> sees ahead, hits double</li>
         <li>Hide behind the <b>HP bars</b> &nbsp;&middot;&nbsp; lure them to the <b>timer</b> &nbsp;&middot;&nbsp; fill the <b>super</b></li>
+        <li class="portraitTip">Turn your phone sideways to see more of the arena</li>
       </ul>
-      <p class="go">TAP TO START</p>
+      <p class="go" id="go">LOADING...</p>
+      <p class="detail" id="bootDetail" hidden></p>
     </div>
   </div>
 
@@ -164,8 +167,6 @@
       <p class="go">TAP TO PLAY AGAIN</p>
     </div>
   </div>
-
-  <div id="rotate">ROTATE YOUR PHONE<small>The arena is a widescreen HUD.</small></div>
 
   <script type="module" src="/src/main.js"></script>
 </body>

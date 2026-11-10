@@ -35,6 +35,21 @@ export function createHud() {
       addEventListener('keydown', (e) => { if (e.code === 'Enter' && overlayOpen()) fn(); });
     },
 
+    /** Everything loaded: the title may now promise that a tap does something. */
+    ready() { $('go').textContent = 'TAP TO START'; },
+
+    /**
+     * Loading failed. The title screen is plain HTML and looks alive either
+     * way, so without this a broken load is a game that silently ignores
+     * every touch, on a device whose console nobody can see.
+     */
+    failed(err) {
+      $('go').textContent = 'COULD NOT LOAD';
+      $('go').classList.add('red');
+      $('bootDetail').textContent = String(err?.message ?? err);
+      $('bootDetail').hidden = false;
+    },
+
     showGame() {
       $('title').hidden = true;
       $('end').hidden = true;

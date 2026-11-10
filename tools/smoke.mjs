@@ -72,6 +72,8 @@ try {
   await page.goto(BASE);
   await page.waitForFunction(() => window.__slayer, null, { timeout: 30000 });
   check('opens on the title screen', (await game()).phase === 'title');
+  check('and says so once it is ready to be tapped',
+    (await page.textContent('#go')) === 'TAP TO START');
 
   await page.touchscreen.tap(W / 2, H / 2);
   await page.waitForFunction(() => window.__slayer.state.phase === 'fight', null, { timeout: 10000 });
@@ -148,6 +150,34 @@ try {
   const midMove = await game();
   await liftAll();
   check('the view button works while a thumb is on the move stick', midMove.mode === '3d');
+
+  // Held upright. Not every phone or app will rotate, so portrait must play.
+  const upright = await browser.newContext({
+    viewport: { width: H, height: W }, deviceScaleFactor: 2, hasTouch: true, isMobile: true,
+  });
+  const tall = await upright.newPage();
+  tall.on('pageerror', (e) => problems.push(e.message));
+  await tall.goto(BASE);
+  await tall.waitForFunction(() => window.__slayer, null, { timeout: 30000 });
+  await tall.touchscreen.tap(H / 2, W / 2);
+  const startedUpright = await tall.waitForFunction(
+    () => window.__slayer.state.phase !== 'title', null, { timeout: 5000 },
+  ).then(() => true, () => false);
+  check('a tap starts the game with the phone held upright', startedUpright);
+  await tall.screenshot({ path: 'qa_shots/live-portrait.png' });
+  await upright.close();
+
+  // A load that fails must say so. The title is plain HTML and looks alive
+  // whether or not the game behind it ever started.
+  const broken = await browser.newContext({ viewport: { width: W, height: H }, hasTouch: true, isMobile: true });
+  const dead = await broken.newPage();
+  await dead.route('**/models/fighter.glb', (route) => route.abort());
+  await dead.goto(BASE);
+  const owned = await dead.waitForFunction(
+    () => document.getElementById('go').textContent === 'COULD NOT LOAD', null, { timeout: 15000 },
+  ).then(() => true, () => false);
+  check('a failed load is announced on screen instead of ignoring touches', owned);
+  await broken.close();
 
   await browser.close();
 } finally {

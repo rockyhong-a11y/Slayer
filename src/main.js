@@ -15,16 +15,24 @@ const STEP = 1 / 60;         // the rules always advance in steps of this size
 const MAX_CATCH_UP = 0.25;   // a stalled tab resumes, it does not fast-forward
 
 const canvas = document.getElementById('game');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 400);
-
 const stage = fighting;
 const state = createGame(stage);
-const world = await createWorld(stage, await loadArt(stage), camera);
+const hud = createHud();
+
+// The two steps that depend on the device and the host: getting a WebGL
+// context, and fetching models and art. Either can fail, and must say so.
+let renderer, world;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  world = await createWorld(stage, await loadArt(stage), camera);
+} catch (err) {
+  hud.failed(err);
+  throw err;
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 const rig = createRig(camera);
 const input = createInput(canvas);
-const hud = createHud();
 
 let mode = '2d';
 let yaw = 0;      // first-person heading: 0 faces north, growing clockwise
@@ -132,4 +140,5 @@ if (scene) {
 // A handle for tools/ scripts; the game itself never reads it.
 window.__slayer = { state, setMode, get mode() { return mode; } };
 
+hud.ready();
 requestAnimationFrame(frame);

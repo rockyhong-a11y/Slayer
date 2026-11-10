@@ -23,7 +23,7 @@ npm run preview    # 빌드 결과를 그대로 서빙
 | 회전·사격 (3D) | 오른쪽 절반을 누르면 사격, 좌우로 끌면 회전 | 마우스(클릭 후 고정) 또는 `←` `→`, `Space` 사격 |
 | 2D ↔ 3D | 우측 상단 버튼 | `F` 또는 `Tab` |
 
-폰은 가로로 든다.
+가로로 들면 전장이 더 넓게 보인다. 세로로도 플레이된다 — 회전이 안 되는 폰이나 앱이 있어서 막지 않는다.
 
 ## 구조
 
@@ -51,6 +51,8 @@ npm run balance                   # 사람 흉내 봇으로 승률 측정
 - **`shots`가 만든 PNG는 반드시 열어서 본다.** 파일이 생긴 것만으로는 통과가 아니다.
 - `smoke`는 `?qa=sandbox`(적 없는 전장)에서 조작을 검증한다. 조작 테스트가 전투 운에 따라 통과·실패하면 안 되기 때문이다.
 - `smoke`·`shots`는 Playwright와 Chromium이 필요하다.
+- 둘 다 `vite preview`에 붙는데, 이 서버는 **엄격한 CSP**(같은 출처 요청만 허용)를 건다. 잠긴 호스트가 거부할 요청을 게임이 하면 사람 폰이 아니라 여기서 먼저 깨지게 하려는 것이다.
+- 로딩이 실패하면 타이틀에 `COULD NOT LOAD`와 이유가 뜬다. 타이틀은 정적 HTML이라 게임이 안 떠도 멀쩡해 보이기 때문에, 이게 없으면 "터치가 안 먹는 게임"으로만 보인다.
 
 `?qa=` 장면: `title` `2d` `3d` `ko` `won` (정지) / `sandbox` (실시간, 적 없음)
 
@@ -87,3 +89,15 @@ python tools/blender/build_models.py             # -> public/models/*.glb
 ## 배포
 
 `npm run build`의 `dist/`를 아무 정적 호스트에 올리면 된다. 경로가 상대 경로라 하위 폴더에서도 동작한다.
+
+### Claude Artifact로 올릴 때
+
+```bash
+npm run build && npm run package:artifact     # -> dist-artifact/
+```
+
+Artifact는 페이지를 자기 문서로 감싸고 `.glb`를 서빙하지 않는다. 그래서 `slayer.html`은 본문만 담고,
+모델은 같은 바이트를 base64로 담은 JSON으로 싣는다. `slayer.html`을 페이지로, `preview.html`을 뺀 나머지를 첨부 파일로 올린다.
+
+모델을 `data:` URL로 넣으면 **안 된다.** 엄격한 CSP가 그 요청을 조용히 막아서 게임이 초기화되지 않고,
+타이틀만 뜬 채 모든 터치를 무시한다 (첫 게시에서 실제로 겪었다).
