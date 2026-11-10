@@ -7,6 +7,7 @@
   <title>Slayer</title>
   <style>
     :root {
+      color-scheme: dark; /* one look, on purpose: an arcade screen has no light theme */
       --ink: #0b0d1a;
       --panel: rgba(11, 13, 26, 0.72);
       --text: #f4f6ff;
@@ -29,8 +30,9 @@
     /* The in-arena HUD is the level itself, so this overlay stays small. */
     #hud {
       position: fixed; inset: 0; pointer-events: none;
-      padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
-               max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      padding-block: max(10px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-bottom, 0px));
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
       font-weight: 800; font-style: italic; letter-spacing: 0.04em;
     }
     #hud[hidden] { display: none; }
@@ -56,7 +58,7 @@
     #mode span.on { background: var(--gold); color: var(--ink); }
 
     #superHint {
-      position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom));
+      position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom, 0px));
       transform: translateX(-50%); padding: 6px 14px; border-radius: 6px; white-space: nowrap;
       background: var(--panel); color: var(--cyan); font-size: 13px;
       animation: blink 0.7s steps(2, jump-none) infinite;
